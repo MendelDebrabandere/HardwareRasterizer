@@ -5,6 +5,8 @@ struct SDL_Surface;
 
 namespace dae
 {
+	class Mesh;
+
 	class Renderer final
 	{
 	public:
@@ -26,6 +28,17 @@ namespace dae
 		int m_Height{};
 
 		bool m_IsInitialized{ false };
+
+		Mesh* m_pMesh{ nullptr };
+
+		ID3D11Device* m_pDevice{ nullptr };
+		ID3D11DeviceContext* m_pDeviceContext{ nullptr };
+		IDXGISwapChain* m_pSwapChain{ nullptr };
+		ID3D11Texture2D* m_pDepthStencilBuffer{ nullptr };
+		ID3D11DepthStencilView* m_pDepthStencilView{ nullptr };
+		ID3D11RenderTargetView* m_pRenderTargetView{ nullptr };
+		ID3D11Resource* m_pRenderTargetBuffer{ nullptr };
+
 
 		//DIRECTX
 		HRESULT InitializeDirectX();
