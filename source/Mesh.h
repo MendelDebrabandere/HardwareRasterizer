@@ -6,6 +6,7 @@ namespace dae
 	{
 		dae::Vector3 position;
 		dae::ColorRGB color;
+		dae::Vector2 uv;
 	};
 
 	class Effect;
@@ -22,7 +23,9 @@ namespace dae
 		Mesh& operator=(const Mesh& other) = delete;
 		Mesh& operator=(Mesh&& other) = delete;
 
+		void TransformVertices(const Timer* pTimer, ID3D11Device* pDevice);
 		void Render(ID3D11DeviceContext* pDeviceContext) const;
+		void SetMatrix(Matrix matrix);
 
 	private:
 		//Create Vertex Layout part
@@ -38,6 +41,10 @@ namespace dae
 		//Create Index Buffer part
 		uint32_t m_NumIndices{};
 		ID3D11Buffer* m_pIndexBuffer{ nullptr };
+
+		Matrix m_WorldMatrix{};
+
+		std::vector<Vertex> m_Vertices{};
 	};
 }
 

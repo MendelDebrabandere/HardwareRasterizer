@@ -2,6 +2,8 @@
 
 namespace dae
 {
+	class Texture;
+
 	class Effect final
 	{
 	public:
@@ -16,13 +18,17 @@ namespace dae
 
 		ID3DX11Effect* GetEffect() const;
 		ID3DX11EffectTechnique* GetTechnique() const;
+		void SetDiffuseMap(Texture* pDiffuseTexture);
 
+		void SetMatrix(const float* matrix);
 	private:
 		static ID3DX11Effect* LoadEffect(ID3D11Device* pDevice, const std::wstring& assetFile);
 
 		ID3DX11Effect* m_pEffect{ nullptr };
 		ID3DX11EffectTechnique* m_pTechnique{ nullptr };
 
+		ID3DX11EffectMatrixVariable* m_pMatWorldViewProjVariable{ nullptr };
+		ID3DX11EffectShaderResourceVariable* m_pDiffuseMapVariable{ nullptr };
 	};
 }
 

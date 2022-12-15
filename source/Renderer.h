@@ -5,7 +5,9 @@ struct SDL_Surface;
 
 namespace dae
 {
+
 	class Mesh;
+	class Camera;
 
 	class Renderer final
 	{
@@ -30,6 +32,7 @@ namespace dae
 		bool m_IsInitialized{ false };
 
 		Mesh* m_pMesh{ nullptr };
+		Camera* m_pCamera{ nullptr };
 
 		ID3D11Device* m_pDevice{ nullptr };
 		ID3D11DeviceContext* m_pDeviceContext{ nullptr };
