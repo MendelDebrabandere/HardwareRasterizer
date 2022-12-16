@@ -22,6 +22,8 @@ namespace dae
 
 		void Update(const Timer* pTimer);
 		void Render() const;
+		void ToggleRotation();
+		void ToggleFilteringMethod();
 
 	private:
 		SDL_Window* m_pWindow{};
@@ -46,5 +48,15 @@ namespace dae
 		//DIRECTX
 		HRESULT InitializeDirectX();
 		//...
+
+
+		enum class FilteringMethod
+		{
+			Point = 0,
+			Linear = 1,
+			Anisotrpic = 2
+		};
+
+		FilteringMethod m_FilteringMethod{ 0 };
 	};
 }

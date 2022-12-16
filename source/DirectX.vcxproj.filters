@@ -51,6 +51,9 @@
     <ClInclude Include="Texture.h">
       <Filter>MyClasses</Filter>
     </ClInclude>
+    <ClInclude Include="Utils.h">
+      <Filter>Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

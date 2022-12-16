@@ -35,10 +35,18 @@ namespace dae
 
 	void dae::Camera::CalculateProjectionMatrix()
 	{
-		projectionMatrix = Matrix{	Vector4{ 1 / (aspectRatio * fov), 0, 0, 0 },
+		projectionMatrix = Matrix{ Vector4{ 1 / (aspectRatio * fov), 0, 0, 0 },
 									Vector4{ 0, 1 / fov, 0, 0 },
 									Vector4{ 0,0,farClip / (farClip - nearClip), 1},
 									Vector4{ 0,0,-(farClip * nearClip) / (farClip - nearClip), 0} };
+
+		//const float Sw{ 2 * sqrtf(((nearClip * nearClip) / (cosf(fov) * cosf(fov)) - (nearClip * nearClip))) };
+		//const float Sh{ 2 * sqrtf(((nearClip * nearClip) / (cosf(fov * aspectRatio) * cosf(fov * aspectRatio)) - (nearClip * nearClip))) };
+
+		//projectionMatrix = Matrix{	Vector4{ 2 * nearClip / Sw,	0,					0,								0												},
+		//							Vector4{ 0,					2 * nearClip / Sh,	0,								0												},
+		//							Vector4{ 0,					0,					farClip / (farClip - nearClip), 0												},
+		//							Vector4{ 0,					0,					0,								((-farClip) * nearClip) / farClip - nearClip}	};
 
 		//ProjectionMatrix => Matrix::CreatePerspectiveFovLH(...) [not implemented yet]
 		//DirectX Implementation => https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dxmatrixperspectivefovlh

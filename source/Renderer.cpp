@@ -2,11 +2,13 @@
 #include "Renderer.h"
 #include "Mesh.h"
 #include "Camera.h"
+#include "Utils.h"
 
 namespace dae {
 
 //#define Triangle
-#define UVSquare
+//#define UVSquare
+#define Vehicle
 
 
 	Renderer::Renderer(SDL_Window* pWindow) :
@@ -56,14 +58,25 @@ namespace dae {
 		};
 
 		const std::vector<uint32_t> indices{ 3,0,1, 1,4,3, 4,1,2, 2,5,4, 6,3,4, 4,7,6, 7,4,5, 5,8,7 };
-			m_pMesh = new Mesh(m_pDevice, vertices, indices);
+		m_pMesh = new Mesh(m_pDevice, vertices, indices, "resources/uv_grid_2.png");
 
 		m_pCamera = new Camera();
 		m_pCamera->Initialize(float(m_Width) / m_Height, 45.f, { 0,0,-10.f });
 
+#elif defined(Vehicle)
 
+		std::vector<Vertex> vertices{};
+		std::vector<uint32_t> indices{};
+		Utils::ParseOBJ("Resources/vehicle.obj", vertices, indices);
+
+		m_pMesh = new Mesh(m_pDevice, vertices, indices, "resources/vehicle_diffuse.png");
+
+		m_pCamera = new Camera();
+		m_pCamera->Initialize(float(m_Width) / m_Height, 45.f, { 0,0,-10.f });
 
 #endif
+
+		std::cout << "\nUsing Point Filtering method.\n\n";
 	}
 
 	Renderer::~Renderer()
@@ -90,10 +103,12 @@ namespace dae {
 
 	void Renderer::Update(const Timer* pTimer)
 	{
+		m_pMesh->Update(pTimer);
+
 		m_pCamera->Update(pTimer);
 		m_pMesh->SetMatrix(m_pCamera->GetViewMatrix() * m_pCamera->GetProjectionMatrix());
 	
-		m_pMesh->TransformVertices(pTimer, m_pDevice);
+		m_pMesh->TransformVertices(m_pDevice);
 	}
 
 
@@ -110,7 +125,7 @@ namespace dae {
 
 
 		//2. SET PIPELINE + INVOKE DRAWCALLS (= RENDER)
-		m_pMesh->Render(m_pDeviceContext);
+		m_pMesh->Render(m_pDeviceContext, int(m_FilteringMethod));
 
 
 
@@ -118,6 +133,30 @@ namespace dae {
 		//3. PRESENT BACKBUFFER (SWAP)
 		m_pSwapChain->Present(0, 0);
 
+	}
+
+	void Renderer::ToggleRotation()
+	{
+		m_pMesh->ToggleRotation();
+	}
+
+	void Renderer::ToggleFilteringMethod()
+	{
+		switch (m_FilteringMethod)
+		{
+		case FilteringMethod::Point:
+			m_FilteringMethod = FilteringMethod::Linear;
+			std::cout << "\nUsing Linear Filtering method.\n\n";
+			break;
+		case FilteringMethod::Linear:
+			m_FilteringMethod = FilteringMethod::Anisotrpic;
+			std::cout << "\nUsing Anisotrpic Filtering method.\n\n";
+			break;
+		case FilteringMethod::Anisotrpic:
+			m_FilteringMethod = FilteringMethod::Point;
+			std::cout << "\nUsing Point Filtering method.\n\n";
+			break;
+		}
 	}
 
 	HRESULT Renderer::InitializeDirectX()

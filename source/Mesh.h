@@ -14,7 +14,7 @@ namespace dae
 	class Mesh final
 	{
 	public:
-		Mesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
+		Mesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::string& texturePath);
 		~Mesh();
 
 		// rule of 5 copypasta
@@ -23,9 +23,11 @@ namespace dae
 		Mesh& operator=(const Mesh& other) = delete;
 		Mesh& operator=(Mesh&& other) = delete;
 
-		void TransformVertices(const Timer* pTimer, ID3D11Device* pDevice);
-		void Render(ID3D11DeviceContext* pDeviceContext) const;
+		void Update(const Timer* pTimer);
+		void TransformVertices(ID3D11Device* pDevice);
+		void Render(ID3D11DeviceContext* pDeviceContext, int FilteringMethod) const;
 		void SetMatrix(Matrix matrix);
+		void ToggleRotation();
 
 	private:
 		//Create Vertex Layout part
@@ -42,7 +44,12 @@ namespace dae
 		uint32_t m_NumIndices{};
 		ID3D11Buffer* m_pIndexBuffer{ nullptr };
 
+		const Matrix m_StartWorldMatrix{ Matrix::CreateTranslation(0,0,0) };
 		Matrix m_WorldMatrix{};
+		Matrix m_WorldViewProjectionMatrix{};
+
+		bool m_IsRotating{ false };
+		float m_Rotation{};
 
 		std::vector<Vertex> m_Vertices{};
 	};

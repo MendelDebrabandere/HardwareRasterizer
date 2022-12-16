@@ -9,8 +9,14 @@ Effect::Effect(ID3D11Device* pDevice, const std::wstring& assetFile)
 {
 	m_pEffect = LoadEffect(pDevice, assetFile);
 
-	m_pTechnique = m_pEffect->GetTechniqueByName("DefaultTechnique");
-	if (!m_pTechnique->IsValid())
+	m_pTechniquePoint = m_pEffect->GetTechniqueByName("PointTechnique");
+	if (!m_pTechniquePoint->IsValid())
+		std::wcout << L"Technique not valid\n";
+	m_pTechniqueLinear = m_pEffect->GetTechniqueByName("LinearTechnique");
+	if (!m_pTechniqueLinear->IsValid())
+		std::wcout << L"Technique not valid\n";
+	m_pTechniqueAnisotropic = m_pEffect->GetTechniqueByName("AnisotropicTechnique");
+	if (!m_pTechniqueAnisotropic->IsValid())
 		std::wcout << L"Technique not valid\n";
 
 	m_pMatWorldViewProjVariable = m_pEffect->GetVariableByName("gWorldViewProj")->AsMatrix();
@@ -29,7 +35,13 @@ Effect::Effect(ID3D11Device* pDevice, const std::wstring& assetFile)
 
 Effect::~Effect()
 {
+	if (m_pTechniquePoint) m_pTechniquePoint->Release();
+	if (m_pTechniqueLinear) m_pTechniqueLinear->Release();
+	if (m_pTechniqueAnisotropic) m_pTechniqueAnisotropic->Release();
 	if (m_pEffect) m_pEffect->Release();
+
+	//if (m_pMatWorldViewProjVariable) m_pMatWorldViewProjVariable->Release();
+	//if (m_pDiffuseMapVariable) m_pDiffuseMapVariable->Release();
 }
 
 ID3DX11Effect* Effect::GetEffect() const
@@ -37,9 +49,17 @@ ID3DX11Effect* Effect::GetEffect() const
 	return m_pEffect;
 }
 
-ID3DX11EffectTechnique* Effect::GetTechnique() const
+ID3DX11EffectTechnique* Effect::GetTechniquePoint() const
 {
-	return m_pTechnique;
+	return m_pTechniquePoint;
+}
+ID3DX11EffectTechnique* Effect::GetTechniqueLinear() const
+{
+	return m_pTechniqueLinear;
+}
+ID3DX11EffectTechnique* Effect::GetTechniqueAnisotropic() const
+{
+	return m_pTechniqueAnisotropic;
 }
 
 void dae::Effect::SetDiffuseMap(Texture* pDiffuseTexture)
