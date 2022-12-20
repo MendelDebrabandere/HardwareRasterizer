@@ -10,7 +10,7 @@ Mesh::Mesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std
 	:m_pEffect{ new Effect(pDevice, L"Resources/PosCol3D.fx") }
 {
 	//Create Vertex Layout
-	static constexpr uint32_t numElements{ 3 };
+	static constexpr uint32_t numElements{ 2 };
 	D3D11_INPUT_ELEMENT_DESC vertexDesc[numElements]{};
 
 	vertexDesc[0].SemanticName = "POSITION";
@@ -18,15 +18,10 @@ Mesh::Mesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std
 	vertexDesc[0].AlignedByteOffset = 0;
 	vertexDesc[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 
-	vertexDesc[1].SemanticName = "COLOR";
-	vertexDesc[1].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	vertexDesc[1].SemanticName = "TEXCOORD";
+	vertexDesc[1].Format = DXGI_FORMAT_R32G32_FLOAT;
 	vertexDesc[1].AlignedByteOffset = 12;
 	vertexDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-
-	vertexDesc[2].SemanticName = "TEXCOORD";
-	vertexDesc[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	vertexDesc[2].AlignedByteOffset = 24;
-	vertexDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 
 	//Create Input Layout
 	//Point
@@ -77,7 +72,6 @@ Mesh::Mesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std
 	}
 
 	//Create Vertex buffer
-	m_Vertices = vertices;
 	D3D11_BUFFER_DESC bd{};
 	bd.Usage = D3D11_USAGE_IMMUTABLE;
 	bd.ByteWidth = sizeof(Vertex) * static_cast<uint32_t>(vertices.size());
@@ -128,45 +122,6 @@ void dae::Mesh::Update(const Timer* pTimer)
 		m_Rotation += pTimer->GetElapsed() * rotationSpeed;
 		m_WorldMatrix = Matrix::CreateRotationY(m_Rotation) * m_StartWorldMatrix;
 	}
-}
-
-void dae::Mesh::TransformVertices(ID3D11Device* pDevice)
-{
-	
-	// Transform vertices
-	m_pVertexBuffer->Release();
-	m_pVertexBuffer = nullptr;
-
-	std::vector<Vertex> transformedVertices{ m_Vertices };
-	uint32_t counter{ 0 };
-	for (const Vertex& vtx : m_Vertices)
-	{
-		 Vector4 newVtx = m_WorldViewProjectionMatrix.TransformPoint({ vtx.position, 1.f });
-
-		transformedVertices[counter].position = newVtx.GetXYZ();
-
-		transformedVertices[counter].position.x /= newVtx.w;
-		transformedVertices[counter].position.y /= newVtx.w;
-		transformedVertices[counter].position.z /= newVtx.w;
-
-		++counter;
-	}
-	//Create Vertex buffer
-	D3D11_BUFFER_DESC bd{};
-	bd.Usage = D3D11_USAGE_IMMUTABLE;
-	bd.ByteWidth = sizeof(Vertex) * static_cast<uint32_t>(transformedVertices.size());
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bd.CPUAccessFlags = 0;
-	bd.MiscFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA initData = {};
-	initData.pSysMem = transformedVertices.data();
-
-	HRESULT result{};
-	result = pDevice->CreateBuffer(&bd, &initData, &m_pVertexBuffer);
-
-	if (FAILED(result))
-		std::cout << "Failed to update vertices of mesh\n";
 }
 
 void Mesh::Render(ID3D11DeviceContext* pDeviceContext, int FilteringMethod) const
@@ -235,3 +190,4 @@ void dae::Mesh::ToggleRotation()
 {
 	m_IsRotating = !m_IsRotating;
 }
+ 

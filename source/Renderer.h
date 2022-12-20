@@ -54,7 +54,7 @@ namespace dae
 		{
 			Point = 0,
 			Linear = 1,
-			Anisotrpic = 2
+			Anisotropic = 2
 		};
 
 		FilteringMethod m_FilteringMethod{ 0 };

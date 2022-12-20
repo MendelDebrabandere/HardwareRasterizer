@@ -39,7 +39,6 @@ namespace dae
 		float totalPitch{};
 		float totalYaw{};
 
-		Matrix invViewMatrix{};
 		Matrix viewMatrix{};
 		Matrix projectionMatrix{};
 

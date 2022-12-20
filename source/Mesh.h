@@ -5,7 +5,6 @@ namespace dae
 	struct Vertex final
 	{
 		dae::Vector3 position;
-		dae::ColorRGB color;
 		dae::Vector2 uv;
 	};
 
@@ -24,7 +23,6 @@ namespace dae
 		Mesh& operator=(Mesh&& other) = delete;
 
 		void Update(const Timer* pTimer);
-		void TransformVertices(ID3D11Device* pDevice);
 		void Render(ID3D11DeviceContext* pDeviceContext, int FilteringMethod) const;
 		void SetMatrix(Matrix matrix);
 		void ToggleRotation();
@@ -50,8 +48,6 @@ namespace dae
 
 		bool m_IsRotating{ false };
 		float m_Rotation{};
-
-		std::vector<Vertex> m_Vertices{};
 	};
 }
 

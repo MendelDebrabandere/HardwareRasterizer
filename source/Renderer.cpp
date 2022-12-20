@@ -6,7 +6,6 @@
 
 namespace dae {
 
-//#define Triangle
 //#define UVSquare
 #define Vehicle
 
@@ -29,32 +28,17 @@ namespace dae {
 			std::cout << "DirectX initialization failed!\n";
 		}
 
-#if defined(Triangle)
-		//Create some data for our mesh
+#if defined(UVSquare)
 		const std::vector<Vertex> vertices{
-			{{0.f, 3.f, 2.f}, {1.f, 0.f, 0.f}},
-			{{3.f, -3.f, 2.f}, {0.f, 0.f, 1.f}},
-			{{-3.f, -3.f, 2.f}, {0.f, 1.f, 0.f}}
-		};
-
-		const std::vector<uint32_t> indices{ 0,1,2 };
-
-		m_pMesh = new Mesh(m_pDevice, vertices, indices);
-
-		m_pCamera = new Camera();
-		m_pCamera->Initialize(float(m_Width) / m_Height, 45.f, { 0,0,-10.f });
-
-#elif defined(UVSquare)
-		const std::vector<Vertex> vertices{
-			{Vector3{-3,3,-2},	ColorRGB{1,1,1},	Vector2{0,0}},
-			{Vector3{0,3,-2},		ColorRGB{1,1,1},	Vector2{0.5f, 0}},
-			{Vector3{3,3,-2},		ColorRGB{1,1,1},	Vector2{1,0}},
-			{Vector3{-3,0,-2},	ColorRGB{1,1,1},	Vector2{0,0.5f}},
-			{Vector3{0,0,-2},		ColorRGB{1,1,1},	Vector2{0.5f,0.5f}},
-			{Vector3{3,0,-2},		ColorRGB{1,1,1},	Vector2{1,0.5f}},
-			{Vector3{-3,-3,-2},	ColorRGB{1,1,1},	Vector2{0,1}},
-			{Vector3{0,-3,-2},	ColorRGB{1,1,1},	Vector2{0.5f,1}},
-			{Vector3{3,-3,-2},	ColorRGB{1,1,1},	Vector2{1, 1}}
+			{Vector3{-3,3,-2},		Vector2{0,0}},
+			{Vector3{0,3,-2},			Vector2{0.5f, 0}},
+			{Vector3{3,3,-2},			Vector2{1,0}},
+			{Vector3{-3,0,-2},		Vector2{0,0.5f}},
+			{Vector3{0,0,-2},			Vector2{0.5f,0.5f}},
+			{Vector3{3,0,-2},			Vector2{1,0.5f}},
+			{Vector3{-3,-3,-2},		Vector2{0,1}},
+			{Vector3{0,-3,-2},		Vector2{0.5f,1}},
+			{Vector3{3,-3,-2},		Vector2{1, 1}}
 		};
 
 		const std::vector<uint32_t> indices{ 3,0,1, 1,4,3, 4,1,2, 2,5,4, 6,3,4, 4,7,6, 7,4,5, 5,8,7 };
@@ -72,11 +56,11 @@ namespace dae {
 		m_pMesh = new Mesh(m_pDevice, vertices, indices, "resources/vehicle_diffuse.png");
 
 		m_pCamera = new Camera();
-		m_pCamera->Initialize(float(m_Width) / m_Height, 45.f, { 0,0,-10.f });
+		m_pCamera->Initialize(float(m_Width) / m_Height, 45.f, { 0,0,-50.f });
 
 #endif
 
-		std::cout << "\nUsing Point Filtering method.\n\n";
+		std::cout << "FILTERING METHOD: POINT\n";
 	}
 
 	Renderer::~Renderer()
@@ -108,7 +92,6 @@ namespace dae {
 		m_pCamera->Update(pTimer);
 		m_pMesh->SetMatrix(m_pCamera->GetViewMatrix() * m_pCamera->GetProjectionMatrix());
 	
-		m_pMesh->TransformVertices(m_pDevice);
 	}
 
 
@@ -146,15 +129,15 @@ namespace dae {
 		{
 		case FilteringMethod::Point:
 			m_FilteringMethod = FilteringMethod::Linear;
-			std::cout << "\nUsing Linear Filtering method.\n\n";
+			std::cout << "FILTERING METHOD: LINEAR\n";
 			break;
 		case FilteringMethod::Linear:
-			m_FilteringMethod = FilteringMethod::Anisotrpic;
-			std::cout << "\nUsing Anisotrpic Filtering method.\n\n";
+			m_FilteringMethod = FilteringMethod::Anisotropic;
+			std::cout << "FILTERING METHOD: ANISOTROPIC\n";
 			break;
-		case FilteringMethod::Anisotrpic:
+		case FilteringMethod::Anisotropic:
 			m_FilteringMethod = FilteringMethod::Point;
-			std::cout << "\nUsing Point Filtering method.\n\n";
+			std::cout << "FILTERING METHOD: POINT\n";
 			break;
 		}
 	}
