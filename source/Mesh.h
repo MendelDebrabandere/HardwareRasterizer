@@ -4,16 +4,20 @@ namespace dae
 {
 	struct Vertex final
 	{
-		dae::Vector3 position;
-		dae::Vector2 uv;
+		Vector3 position;
+		Vector2 uv;
+		//Vector3 normal;
+		//Vector3 tangent;
 	};
 
 	class Effect;
+	class Texture;
 
 	class Mesh final
 	{
 	public:
 		Mesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::string& texturePath);
+		Mesh(ID3D11Device* pDevice, const std::string& objectPath, const std::string& texturePath);
 		~Mesh();
 
 		// rule of 5 copypasta
@@ -23,17 +27,18 @@ namespace dae
 		Mesh& operator=(Mesh&& other) = delete;
 
 		void Update(const Timer* pTimer);
-		void Render(ID3D11DeviceContext* pDeviceContext, int FilteringMethod) const;
-		void SetMatrix(Matrix matrix);
+		void Render(ID3D11DeviceContext* pDeviceContext) const;
+		void SetMatrix(const Matrix& matrix);
 		void ToggleRotation();
+		void ToggleFilteringMethod();
 
 	private:
+		void InitMesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::string& texturePath);
+
+
 		//Create Vertex Layout part
 		Effect* m_pEffect{ nullptr };
 
-		//Create Input Layout part
-		ID3DX11EffectTechnique* m_pTechnique{ nullptr };
-		ID3D11InputLayout* m_pInputLayout{ nullptr };
 
 		//Create Vertex buffer part
 		ID3D11Buffer* m_pVertexBuffer{ nullptr };

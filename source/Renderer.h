@@ -49,14 +49,5 @@ namespace dae
 		HRESULT InitializeDirectX();
 		//...
 
-
-		enum class FilteringMethod
-		{
-			Point = 0,
-			Linear = 1,
-			Anisotropic = 2
-		};
-
-		FilteringMethod m_FilteringMethod{ 0 };
 	};
 }

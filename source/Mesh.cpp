@@ -3,73 +3,28 @@
 #include "Effect.h"
 #include "Texture.h"
 #include <cassert>
+#include "utils.h"
 
 using namespace dae;
 
 Mesh::Mesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::string& texturePath)
 	:m_pEffect{ new Effect(pDevice, L"Resources/PosCol3D.fx") }
 {
-	//Create Vertex Layout
-	static constexpr uint32_t numElements{ 2 };
-	D3D11_INPUT_ELEMENT_DESC vertexDesc[numElements]{};
+	InitMesh(pDevice, vertices, indices, texturePath);
+}
 
-	vertexDesc[0].SemanticName = "POSITION";
-	vertexDesc[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	vertexDesc[0].AlignedByteOffset = 0;
-	vertexDesc[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+dae::Mesh::Mesh(ID3D11Device* pDevice, const std::string& objectPath, const std::string& texturePath)
+	:m_pEffect{ new Effect(pDevice, L"Resources/PosCol3D.fx") }
+{
+	std::vector<Vertex> vertices{};
+	std::vector<uint32_t> indices{};
+	Utils::ParseOBJ("Resources/vehicle.obj", vertices, indices);
 
-	vertexDesc[1].SemanticName = "TEXCOORD";
-	vertexDesc[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-	vertexDesc[1].AlignedByteOffset = 12;
-	vertexDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	InitMesh(pDevice, vertices, indices, texturePath);
+}
 
-	//Create Input Layout
-	//Point
-	D3DX11_PASS_DESC passDesc{};
-	m_pTechnique = m_pEffect->GetTechniquePoint();
-	m_pTechnique->GetPassByIndex(0)->GetDesc(&passDesc);
-
-	HRESULT result = pDevice->CreateInputLayout(
-		vertexDesc,
-		numElements,
-		passDesc.pIAInputSignature,
-		passDesc.IAInputSignatureSize,
-		&m_pInputLayout);
-
-	if (FAILED(result))
-	{
-		assert(false); //or return
-	}
-
-	m_pTechnique = m_pEffect->GetTechniqueLinear();
-	m_pTechnique->GetPassByIndex(0)->GetDesc(&passDesc);
-
-	result = pDevice->CreateInputLayout(
-		vertexDesc,
-		numElements,
-		passDesc.pIAInputSignature,
-		passDesc.IAInputSignatureSize,
-		&m_pInputLayout);
-
-	if (FAILED(result))
-	{
-		assert(false); //or return
-	}
-
-	m_pTechnique = m_pEffect->GetTechniqueAnisotropic();
-	m_pTechnique->GetPassByIndex(0)->GetDesc(&passDesc);
-
-	result = pDevice->CreateInputLayout(
-		vertexDesc,
-		numElements,
-		passDesc.pIAInputSignature,
-		passDesc.IAInputSignatureSize,
-		&m_pInputLayout);
-
-	if (FAILED(result))
-	{
-		assert(false); //or return
-	}
+void dae::Mesh::InitMesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::string& texturePath)
+{
 
 	//Create Vertex buffer
 	D3D11_BUFFER_DESC bd{};
@@ -82,9 +37,10 @@ Mesh::Mesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std
 	D3D11_SUBRESOURCE_DATA initData = {};
 	initData.pSysMem = vertices.data();
 
-	result = pDevice->CreateBuffer(&bd, &initData, &m_pVertexBuffer);
+	HRESULT result = pDevice->CreateBuffer(&bd, &initData, &m_pVertexBuffer);
 	if (FAILED(result))
 		return;
+
 
 	//Create Index Buffer
 	m_NumIndices = static_cast<uint32_t>(indices.size());
@@ -98,14 +54,13 @@ Mesh::Mesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std
 	if (FAILED(result))
 		return;
 
+
 	m_pEffect->SetDiffuseMap(Texture::LoadFromFile(texturePath, pDevice));
 }
 
 Mesh::~Mesh()
 {
 	delete m_pEffect;
-
-	if (m_pInputLayout) m_pInputLayout->Release();
 
 	if (m_pVertexBuffer) m_pVertexBuffer->Release();
 
@@ -124,13 +79,13 @@ void dae::Mesh::Update(const Timer* pTimer)
 	}
 }
 
-void Mesh::Render(ID3D11DeviceContext* pDeviceContext, int FilteringMethod) const
+void Mesh::Render(ID3D11DeviceContext* pDeviceContext) const
 {
 	//1. Set Primitive Topology
 	pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	//2. Set Input Layout
-	pDeviceContext->IASetInputLayout(m_pInputLayout);
+	pDeviceContext->IASetInputLayout(m_pEffect->GetImputLayout());
 
 	//3. Set VertexBuffer
 	constexpr UINT stride = sizeof(Vertex);
@@ -141,46 +96,18 @@ void Mesh::Render(ID3D11DeviceContext* pDeviceContext, int FilteringMethod) cons
 	pDeviceContext->IASetIndexBuffer(m_pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 	//5. Draw
-	switch (FilteringMethod)
+	D3DX11_TECHNIQUE_DESC techDesc{};
+	m_pEffect->GetTechnique()->GetDesc(&techDesc);
+	for (UINT p = 0; p < techDesc.Passes; ++p)
 	{
-	case 0:
-	{
-		D3DX11_TECHNIQUE_DESC techDesc{};
-		m_pEffect->GetTechniquePoint()->GetDesc(&techDesc);
-		for (UINT p = 0; p < techDesc.Passes; ++p)
-		{
-			m_pEffect->GetTechniquePoint()->GetPassByIndex(p)->Apply(0, pDeviceContext);
-			pDeviceContext->DrawIndexed(m_NumIndices, 0, 0);
-		}
-		break;
+		m_pEffect->GetTechnique()->GetPassByIndex(p)->Apply(0, pDeviceContext);
+		pDeviceContext->DrawIndexed(m_NumIndices, 0, 0);
 	}
-	case 1:
-	{
-		D3DX11_TECHNIQUE_DESC techDesc{};
-		m_pEffect->GetTechniqueLinear()->GetDesc(&techDesc);
-		for (UINT p = 0; p < techDesc.Passes; ++p)
-		{
-			m_pEffect->GetTechniqueLinear()->GetPassByIndex(p)->Apply(0, pDeviceContext);
-			pDeviceContext->DrawIndexed(m_NumIndices, 0, 0);
-		}
-		break;
-	}
-	case 2:
-	{
-		D3DX11_TECHNIQUE_DESC techDesc{};
-		m_pEffect->GetTechniqueAnisotropic()->GetDesc(&techDesc);
-		for (UINT p = 0; p < techDesc.Passes; ++p)
-		{
-			m_pEffect->GetTechniqueAnisotropic()->GetPassByIndex(p)->Apply(0, pDeviceContext);
-			pDeviceContext->DrawIndexed(m_NumIndices, 0, 0);
-		}
-		break;
-	}
-	}
+
 
 }
 
-void dae::Mesh::SetMatrix(Matrix matrix)
+void dae::Mesh::SetMatrix(const Matrix& matrix)
 {
 	m_WorldViewProjectionMatrix = m_WorldMatrix * matrix;
 	m_pEffect->SetMatrix(reinterpret_cast<float*>(&m_WorldViewProjectionMatrix));
@@ -190,4 +117,11 @@ void dae::Mesh::ToggleRotation()
 {
 	m_IsRotating = !m_IsRotating;
 }
+
+void dae::Mesh::ToggleFilteringMethod()
+{
+	m_pEffect->ToggleFilteringMethod();
+}
+
+
  

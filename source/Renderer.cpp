@@ -48,19 +48,13 @@ namespace dae {
 		m_pCamera->Initialize(float(m_Width) / m_Height, 45.f, { 0,0,-10.f });
 
 #elif defined(Vehicle)
-
-		std::vector<Vertex> vertices{};
-		std::vector<uint32_t> indices{};
-		Utils::ParseOBJ("Resources/vehicle.obj", vertices, indices);
-
-		m_pMesh = new Mesh(m_pDevice, vertices, indices, "resources/vehicle_diffuse.png");
+		
+		m_pMesh = new Mesh(m_pDevice, "Resources/vehicle.obj", "resources/vehicle_diffuse.png");
 
 		m_pCamera = new Camera();
 		m_pCamera->Initialize(float(m_Width) / m_Height, 45.f, { 0,0,-50.f });
 
 #endif
-
-		std::cout << "FILTERING METHOD: POINT\n";
 	}
 
 	Renderer::~Renderer()
@@ -102,13 +96,13 @@ namespace dae {
 
 
 		//1. CLEAR RTV & DSV
-		ColorRGB clearColor{ 0.f,0.f,0.3f };
+		constexpr ColorRGB clearColor{ 0.f,0.f,0.3f };
 		m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView, &clearColor.r);
 		m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
 
 
 		//2. SET PIPELINE + INVOKE DRAWCALLS (= RENDER)
-		m_pMesh->Render(m_pDeviceContext, int(m_FilteringMethod));
+		m_pMesh->Render(m_pDeviceContext);
 
 
 
@@ -125,21 +119,7 @@ namespace dae {
 
 	void Renderer::ToggleFilteringMethod()
 	{
-		switch (m_FilteringMethod)
-		{
-		case FilteringMethod::Point:
-			m_FilteringMethod = FilteringMethod::Linear;
-			std::cout << "FILTERING METHOD: LINEAR\n";
-			break;
-		case FilteringMethod::Linear:
-			m_FilteringMethod = FilteringMethod::Anisotropic;
-			std::cout << "FILTERING METHOD: ANISOTROPIC\n";
-			break;
-		case FilteringMethod::Anisotropic:
-			m_FilteringMethod = FilteringMethod::Point;
-			std::cout << "FILTERING METHOD: POINT\n";
-			break;
-		}
+		m_pMesh->ToggleFilteringMethod();
 	}
 
 	HRESULT Renderer::InitializeDirectX()
