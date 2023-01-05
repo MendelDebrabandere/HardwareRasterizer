@@ -119,7 +119,7 @@ namespace dae {
 
 	void Renderer::ToggleFilteringMethod()
 	{
-		m_pMesh->ToggleFilteringMethod();
+		m_pMesh->ToggleFilteringMethod(m_pDevice);
 	}
 
 	HRESULT Renderer::InitializeDirectX()
@@ -238,4 +238,5 @@ namespace dae {
 		return result;
 
 	}
+
 }

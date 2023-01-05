@@ -11,14 +11,8 @@ Effect::Effect(ID3D11Device* pDevice, const std::wstring& assetFile)
 {
 	m_pEffect = LoadEffect(pDevice, assetFile);
 
-	m_pTechniquePoint = m_pEffect->GetTechniqueByName("PointTechnique");
-	if (!m_pTechniquePoint->IsValid())
-		std::wcout << L"Technique not valid\n";
-	m_pTechniqueLinear = m_pEffect->GetTechniqueByName("LinearTechnique");
-	if (!m_pTechniqueLinear->IsValid())
-		std::wcout << L"Technique not valid\n";
-	m_pTechniqueAnisotropic = m_pEffect->GetTechniqueByName("AnisotropicTechnique");
-	if (!m_pTechniqueAnisotropic->IsValid())
+	m_pTechnique = m_pEffect->GetTechniqueByName("DefaultTechnique");
+	if (!m_pTechnique->IsValid())
 		std::wcout << L"Technique not valid\n";
 
 	m_pMatWorldViewProjVariable = m_pEffect->GetVariableByName("gWorldViewProj")->AsMatrix();
@@ -33,9 +27,12 @@ Effect::Effect(ID3D11Device* pDevice, const std::wstring& assetFile)
 		std::wcout << L"m_pDiffuseMapVariable not valid!\n";
 	}
 
+	m_pSamplerStateVariable = m_pEffect->GetVariableByName("gSamState")->AsSampler();
+	if (!m_pSamplerStateVariable->IsValid()) std::wcout << L"m_pSamplerStateVariable not valid\n";
+	
 
 	//Create Vertex Layout
-	static constexpr uint32_t numElements{ 2 };
+	static constexpr uint32_t numElements{ 4 };
 	D3D11_INPUT_ELEMENT_DESC vertexDesc[numElements]{};
 
 	vertexDesc[0].SemanticName = "POSITION";
@@ -48,10 +45,21 @@ Effect::Effect(ID3D11Device* pDevice, const std::wstring& assetFile)
 	vertexDesc[1].AlignedByteOffset = 12;
 	vertexDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 
+	vertexDesc[2].SemanticName = "NORMAL";
+	vertexDesc[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	vertexDesc[2].AlignedByteOffset = 20;
+	vertexDesc[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+
+	vertexDesc[3].SemanticName = "TANGENT";
+	vertexDesc[3].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	vertexDesc[3].AlignedByteOffset = 32;
+	vertexDesc[3].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+
+
+
 	//Create Input Layout
-	//Point
 	D3DX11_PASS_DESC passDesc{};
-	m_pTechniqueLinear->GetPassByIndex(0)->GetDesc(&passDesc);
+	m_pTechnique->GetPassByIndex(0)->GetDesc(&passDesc);
 
 	HRESULT result = pDevice->CreateInputLayout(
 		vertexDesc,
@@ -65,46 +73,12 @@ Effect::Effect(ID3D11Device* pDevice, const std::wstring& assetFile)
 		assert(false); //or return
 	}
 
-	//Linear
-	m_pTechniqueLinear->GetPassByIndex(0)->GetDesc(&passDesc);
-	result = pDevice->CreateInputLayout(
-		vertexDesc,
-		numElements,
-		passDesc.pIAInputSignature,
-		passDesc.IAInputSignatureSize,
-		&m_pInputLayout);
-
-	if (FAILED(result))
-	{
-		assert(false); //or return
-	}
-
-	//Anisotropic
-	m_pTechniqueAnisotropic->GetPassByIndex(0)->GetDesc(&passDesc);
-	result = pDevice->CreateInputLayout(
-		vertexDesc,
-		numElements,
-		passDesc.pIAInputSignature,
-		passDesc.IAInputSignatureSize,
-		&m_pInputLayout);
-
-	if (FAILED(result))
-	{
-		assert(false); //or return
-	}
-
-
-	
-
-	m_pCurrentTechnique = m_pTechniquePoint;
 	std::cout << "FILTERING METHOD: POINT\n";
 }
 
 Effect::~Effect()
 {
-	if (m_pTechniquePoint) m_pTechniquePoint->Release();
-	if (m_pTechniqueLinear) m_pTechniqueLinear->Release();
-	if (m_pTechniqueAnisotropic) m_pTechniqueAnisotropic->Release();
+	if (m_pTechnique) m_pTechnique->Release();
 	if (m_pEffect) m_pEffect->Release();
 
 	//if (m_pMatWorldViewProjVariable) m_pMatWorldViewProjVariable->Release();
@@ -118,7 +92,7 @@ ID3DX11Effect* Effect::GetEffect() const
 
 ID3DX11EffectTechnique* Effect::GetTechnique() const
 {
-	return m_pCurrentTechnique;
+	return m_pTechnique;
 }
 
 ID3D11InputLayout* dae::Effect::GetImputLayout() const
@@ -133,26 +107,29 @@ void Effect::SetDiffuseMap(const Texture* pDiffuseTexture)
 	delete pDiffuseTexture;
 }
 
-void dae::Effect::ToggleFilteringMethod()
+void dae::Effect::ToggleFilteringMethod(ID3D11Device* device)
 {
+	D3D11_FILTER newFilter{};
 	switch (m_FilteringMethod)
 	{
 	case FilteringMethod::Point:
 		m_FilteringMethod = FilteringMethod::Linear;
-		m_pCurrentTechnique = m_pTechniqueLinear;
+		newFilter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 		std::cout << "FILTERING METHOD: LINEAR\n";
 		break;
 	case FilteringMethod::Linear:
 		m_FilteringMethod = FilteringMethod::Anisotropic;
-		m_pCurrentTechnique = m_pTechniqueAnisotropic;
+		newFilter = D3D11_FILTER_ANISOTROPIC;
 		std::cout << "FILTERING METHOD: ANISOTROPIC\n";
 		break;
 	case FilteringMethod::Anisotropic:
 		m_FilteringMethod = FilteringMethod::Point;
-		m_pCurrentTechnique = m_pTechniquePoint;
+		newFilter = D3D11_FILTER_MIN_MAG_MIP_POINT;
 		std::cout << "FILTERING METHOD: POINT\n";
 		break;
 	}
+
+	LoadSampleState(newFilter, device);
 }
 
 void dae::Effect::SetMatrix(const float* matrix)
@@ -207,4 +184,32 @@ ID3DX11Effect* Effect::LoadEffect(ID3D11Device* pDevice, const std::wstring& ass
 	}
 
 	return pEffect;
+}
+
+void dae::Effect::LoadSampleState(const D3D11_FILTER& filter, ID3D11Device* device)
+{
+	// Create the SampleState description
+	D3D11_SAMPLER_DESC sampleDesc{};
+	sampleDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampleDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampleDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampleDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sampleDesc.MipLODBias = 0;
+	sampleDesc.MinLOD = 0;
+	sampleDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	sampleDesc.MaxAnisotropy = 16;
+	sampleDesc.Filter = filter;
+
+
+	if (m_pSamplerState) m_pSamplerState->Release();
+
+
+	HRESULT result{ device->CreateSamplerState(&sampleDesc, &m_pSamplerState) };
+	if (FAILED(result))
+		std::wcout << L"m_pSampleState failed to load\n";
+
+
+	result = m_pSamplerStateVariable->SetSampler(0, m_pSamplerState);
+	if (FAILED(result))
+		std::wcout << L"m_pSampleState failed to Change\n";
 }

@@ -6,8 +6,8 @@ namespace dae
 	{
 		Vector3 position;
 		Vector2 uv;
-		//Vector3 normal;
-		//Vector3 tangent;
+		Vector3 normal;
+		Vector3 tangent;
 	};
 
 	class Effect;
@@ -30,7 +30,7 @@ namespace dae
 		void Render(ID3D11DeviceContext* pDeviceContext) const;
 		void SetMatrix(const Matrix& matrix);
 		void ToggleRotation();
-		void ToggleFilteringMethod();
+		void ToggleFilteringMethod(ID3D11Device* device);
 
 	private:
 		void InitMesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::string& texturePath);

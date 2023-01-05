@@ -118,9 +118,9 @@ void dae::Mesh::ToggleRotation()
 	m_IsRotating = !m_IsRotating;
 }
 
-void dae::Mesh::ToggleFilteringMethod()
+void dae::Mesh::ToggleFilteringMethod(ID3D11Device* device)
 {
-	m_pEffect->ToggleFilteringMethod();
+	m_pEffect->ToggleFilteringMethod(device);
 }
 
 

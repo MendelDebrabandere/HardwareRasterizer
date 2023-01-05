@@ -36,6 +36,7 @@ namespace dae
 		Mesh* m_pMesh{ nullptr };
 		Camera* m_pCamera{ nullptr };
 
+		ID3D11SamplerState* m_pSampleState{ nullptr };
 		ID3D11Device* m_pDevice{ nullptr };
 		ID3D11DeviceContext* m_pDeviceContext{ nullptr };
 		IDXGISwapChain* m_pSwapChain{ nullptr };

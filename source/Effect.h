@@ -21,7 +21,7 @@ namespace dae
 		ID3D11InputLayout* GetImputLayout() const;
 
 		void SetDiffuseMap(const Texture* pDiffuseTexture);
-		void ToggleFilteringMethod();
+		void ToggleFilteringMethod(ID3D11Device* device);
 		void SetMatrix(const float* matrix);
 
 	private:
@@ -29,15 +29,13 @@ namespace dae
 
 
 		ID3DX11Effect* m_pEffect{ nullptr };
-		ID3DX11EffectTechnique* m_pTechniquePoint{ nullptr };
-		ID3DX11EffectTechnique* m_pTechniqueLinear{ nullptr };
-		ID3DX11EffectTechnique* m_pTechniqueAnisotropic{ nullptr };
 
 		//Create Input Layout part
-		ID3DX11EffectTechnique* m_pCurrentTechnique{ nullptr };
+		ID3DX11EffectTechnique* m_pTechnique{ nullptr };
 		ID3D11InputLayout* m_pInputLayout{ nullptr };
 
-
+		ID3D11SamplerState* m_pSamplerState{ nullptr };
+		ID3DX11EffectSamplerVariable* m_pSamplerStateVariable{ nullptr };
 		ID3DX11EffectMatrixVariable* m_pMatWorldViewProjVariable{ nullptr };
 		ID3DX11EffectShaderResourceVariable* m_pDiffuseMapVariable{ nullptr };
 
@@ -49,6 +47,8 @@ namespace dae
 		};
 
 		FilteringMethod m_FilteringMethod{ 0 };
+
+		void LoadSampleState(const D3D11_FILTER& filter, ID3D11Device* device);
 	};
 }
 
