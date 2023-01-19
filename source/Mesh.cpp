@@ -21,9 +21,14 @@ dae::Mesh::Mesh(ID3D11Device* pDevice, const std::string& objectPath, const std:
 	Utils::ParseOBJ("Resources/vehicle.obj", vertices, indices);
 
 	InitMesh(pDevice, vertices, indices, texturePath);
+
+	m_pEffect->SetDiffuseMap(Texture::LoadFromFile(texturePath, pDevice));
+	m_pEffect->SetNormalMap(Texture::LoadFromFile("resources/vehicle_normal.png", pDevice));
+	m_pEffect->SetSpecularMap(Texture::LoadFromFile("resources/vehicle_specular.png", pDevice));
+	m_pEffect->SetGlossinessMap(Texture::LoadFromFile("resources/vehicle_gloss.png", pDevice));
 }
 
-void dae::Mesh::InitMesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::string& texturePath)
+void Mesh::InitMesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::string& texturePath)
 {
 
 	//Create Vertex buffer
@@ -53,9 +58,6 @@ void dae::Mesh::InitMesh(ID3D11Device* pDevice, const std::vector<Vertex>& verti
 	result = pDevice->CreateBuffer(&bd, &initData, &m_pIndexBuffer);
 	if (FAILED(result))
 		return;
-
-
-	m_pEffect->SetDiffuseMap(Texture::LoadFromFile(texturePath, pDevice));
 }
 
 Mesh::~Mesh()
@@ -69,7 +71,7 @@ Mesh::~Mesh()
 	//if (m_pTechnique) m_pTechnique->Release();
 }
 
-void dae::Mesh::Update(const Timer* pTimer)
+void Mesh::Update(const Timer* pTimer)
 {
 	if (m_IsRotating)
 	{
@@ -85,7 +87,7 @@ void Mesh::Render(ID3D11DeviceContext* pDeviceContext) const
 	pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	//2. Set Input Layout
-	pDeviceContext->IASetInputLayout(m_pEffect->GetImputLayout());
+	pDeviceContext->IASetInputLayout(m_pEffect->GetInputLayout());
 
 	//3. Set VertexBuffer
 	constexpr UINT stride = sizeof(Vertex);
@@ -107,18 +109,20 @@ void Mesh::Render(ID3D11DeviceContext* pDeviceContext) const
 
 }
 
-void dae::Mesh::SetMatrix(const Matrix& matrix)
+void Mesh::SetMatrix(const Matrix& matrix, Matrix* invViewMatrix)
 {
 	m_WorldViewProjectionMatrix = m_WorldMatrix * matrix;
-	m_pEffect->SetMatrix(reinterpret_cast<float*>(&m_WorldViewProjectionMatrix));
+	m_pEffect->SetWorldViewProjMatrix(reinterpret_cast<float*>(&m_WorldViewProjectionMatrix));
+	m_pEffect->SetWorldMatrix(reinterpret_cast<float*>(&m_WorldMatrix));
+	m_pEffect->SetInverseViewMatrix(reinterpret_cast<float*>(invViewMatrix));
 }
 
-void dae::Mesh::ToggleRotation()
+void Mesh::ToggleRotation()
 {
 	m_IsRotating = !m_IsRotating;
 }
 
-void dae::Mesh::ToggleFilteringMethod(ID3D11Device* device)
+void Mesh::ToggleFilteringMethod(ID3D11Device* device)
 {
 	m_pEffect->ToggleFilteringMethod(device);
 }

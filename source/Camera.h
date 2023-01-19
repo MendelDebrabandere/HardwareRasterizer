@@ -20,6 +20,7 @@ namespace dae
 		Matrix GetProjectionMatrix() const;
 
 		Matrix GetViewMatrix() const;
+		Matrix* GetInvViewMatrix();
 
 		void Update(const Timer* pTimer);
 
@@ -39,6 +40,7 @@ namespace dae
 		float totalPitch{};
 		float totalYaw{};
 
+		Matrix invViewMatrix{};
 		Matrix viewMatrix{};
 		Matrix projectionMatrix{};
 

@@ -18,11 +18,17 @@ namespace dae
 
 		ID3DX11Effect* GetEffect() const;
 		ID3DX11EffectTechnique* GetTechnique() const;
-		ID3D11InputLayout* GetImputLayout() const;
+		ID3D11InputLayout* GetInputLayout() const;
 
-		void SetDiffuseMap(const Texture* pDiffuseTexture);
+		void SetDiffuseMap(const Texture* texture);
+		void SetNormalMap(const Texture* texture);
+		void SetSpecularMap(const Texture* texture);
+		void SetGlossinessMap(const Texture* texture);
 		void ToggleFilteringMethod(ID3D11Device* device);
-		void SetMatrix(const float* matrix);
+		void SetWorldViewProjMatrix(const float* matrix);
+		void SetWorldMatrix(const float* matrix);
+		void SetInverseViewMatrix(const float* matrix);
+
 
 	private:
 		static ID3DX11Effect* LoadEffect(ID3D11Device* pDevice, const std::wstring& assetFile);
@@ -36,8 +42,14 @@ namespace dae
 
 		ID3D11SamplerState* m_pSamplerState{ nullptr };
 		ID3DX11EffectSamplerVariable* m_pSamplerStateVariable{ nullptr };
-		ID3DX11EffectMatrixVariable* m_pMatWorldViewProjVariable{ nullptr };
+		ID3DX11EffectMatrixVariable* m_pWorldViewProjMatrixVariable{ nullptr };
 		ID3DX11EffectShaderResourceVariable* m_pDiffuseMapVariable{ nullptr };
+		ID3DX11EffectShaderResourceVariable* m_pNormalMapVariable{ nullptr };
+		ID3DX11EffectShaderResourceVariable* m_pSpecularMapVariable{ nullptr };
+		ID3DX11EffectShaderResourceVariable* m_pGlossinessMapVariable{ nullptr };
+
+		ID3DX11EffectMatrixVariable* m_pWorldMatrixVariable{};
+		ID3DX11EffectMatrixVariable* m_pInverseViewMatrixVariable{};
 
 		enum class FilteringMethod
 		{

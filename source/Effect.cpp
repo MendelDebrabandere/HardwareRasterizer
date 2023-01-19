@@ -15,21 +15,37 @@ Effect::Effect(ID3D11Device* pDevice, const std::wstring& assetFile)
 	if (!m_pTechnique->IsValid())
 		std::wcout << L"Technique not valid\n";
 
-	m_pMatWorldViewProjVariable = m_pEffect->GetVariableByName("gWorldViewProj")->AsMatrix();
-	if (!m_pMatWorldViewProjVariable->IsValid())
-	{
+	m_pWorldViewProjMatrixVariable = m_pEffect->GetVariableByName("gWorldViewProj")->AsMatrix();
+	if (!m_pWorldViewProjMatrixVariable->IsValid())
 		std::wcout << L"m_pMatWorldViewProjVariable not valid!\n";
-	}
 
 	m_pDiffuseMapVariable = m_pEffect->GetVariableByName("gDiffuseMap")->AsShaderResource();
 	if (!m_pDiffuseMapVariable->IsValid())
-	{
 		std::wcout << L"m_pDiffuseMapVariable not valid!\n";
-	}
+
+	m_pNormalMapVariable = m_pEffect->GetVariableByName("gNormalMap")->AsShaderResource();
+	if (!m_pNormalMapVariable->IsValid())
+		std::wcout << L"m_pNormalMapVariable not valid!\n";
+
+	m_pSpecularMapVariable = m_pEffect->GetVariableByName("gSpecularMap")->AsShaderResource();
+	if (!m_pSpecularMapVariable->IsValid())
+		std::wcout << L"m_pSpecularMapVariable not valid!\n";
+
+	m_pGlossinessMapVariable = m_pEffect->GetVariableByName("gGlossinessMap")->AsShaderResource();
+	if (!m_pGlossinessMapVariable->IsValid())
+		std::wcout << L"m_pGlossinessMapVariable not valid!\n";
 
 	m_pSamplerStateVariable = m_pEffect->GetVariableByName("gSamState")->AsSampler();
-	if (!m_pSamplerStateVariable->IsValid()) std::wcout << L"m_pSamplerStateVariable not valid\n";
-	
+	if (!m_pSamplerStateVariable->IsValid())
+		std::wcout << L"m_pSamplerStateVariable not valid\n";
+
+	m_pWorldMatrixVariable = m_pEffect->GetVariableByName("gWorldMatrix")->AsMatrix();
+	if (!m_pWorldMatrixVariable->IsValid())
+		std::wcout << L"m_pWorldMatrixVariable not valid\n";
+
+	m_pInverseViewMatrixVariable = m_pEffect->GetVariableByName("gViewInverseMatrix")->AsMatrix();
+	if (!m_pInverseViewMatrixVariable->IsValid())
+		std::wcout << L"m_pInverseViewMatrixVariable not valid\n";
 
 	//Create Vertex Layout
 	static constexpr uint32_t numElements{ 4 };
@@ -95,19 +111,40 @@ ID3DX11EffectTechnique* Effect::GetTechnique() const
 	return m_pTechnique;
 }
 
-ID3D11InputLayout* dae::Effect::GetImputLayout() const
+ID3D11InputLayout* Effect::GetInputLayout() const
 {
 	return m_pInputLayout;
 }
 
-void Effect::SetDiffuseMap(const Texture* pDiffuseTexture)
+void Effect::SetDiffuseMap(const Texture* texture)
 {
 	if (m_pDiffuseMapVariable)
-		m_pDiffuseMapVariable->SetResource(pDiffuseTexture->GetSRV());
-	delete pDiffuseTexture;
+		m_pDiffuseMapVariable->SetResource(texture->GetSRV());
+	delete texture;
 }
 
-void dae::Effect::ToggleFilteringMethod(ID3D11Device* device)
+void Effect::SetNormalMap(const Texture* texture)
+{
+	if (m_pNormalMapVariable)
+		m_pNormalMapVariable->SetResource(texture->GetSRV());
+	delete texture;
+}
+
+void Effect::SetSpecularMap(const Texture* texture)
+{
+	if (m_pSpecularMapVariable)
+		m_pSpecularMapVariable->SetResource(texture->GetSRV());
+	delete texture;
+}
+
+void Effect::SetGlossinessMap(const Texture* texture)
+{
+	if (m_pGlossinessMapVariable)
+		m_pGlossinessMapVariable->SetResource(texture->GetSRV());
+	delete texture;
+}
+
+void Effect::ToggleFilteringMethod(ID3D11Device* device)
 {
 	D3D11_FILTER newFilter{};
 	switch (m_FilteringMethod)
@@ -132,9 +169,19 @@ void dae::Effect::ToggleFilteringMethod(ID3D11Device* device)
 	LoadSampleState(newFilter, device);
 }
 
-void dae::Effect::SetMatrix(const float* matrix)
+void Effect::SetWorldViewProjMatrix(const float* matrix)
 {
-	m_pMatWorldViewProjVariable->SetMatrix(matrix);
+	m_pWorldViewProjMatrixVariable->SetMatrix(matrix);
+}
+
+void dae::Effect::SetWorldMatrix(const float* matrix)
+{
+	m_pWorldMatrixVariable->SetMatrix(matrix);
+}
+
+void dae::Effect::SetInverseViewMatrix(const float* matrix)
+{
+	m_pInverseViewMatrixVariable->SetMatrix(matrix);
 }
 
 ID3DX11Effect* Effect::LoadEffect(ID3D11Device* pDevice, const std::wstring& assetFile)
@@ -186,7 +233,7 @@ ID3DX11Effect* Effect::LoadEffect(ID3D11Device* pDevice, const std::wstring& ass
 	return pEffect;
 }
 
-void dae::Effect::LoadSampleState(const D3D11_FILTER& filter, ID3D11Device* device)
+void Effect::LoadSampleState(const D3D11_FILTER& filter, ID3D11Device* device)
 {
 	// Create the SampleState description
 	D3D11_SAMPLER_DESC sampleDesc{};

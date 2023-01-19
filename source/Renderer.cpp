@@ -84,7 +84,7 @@ namespace dae {
 		m_pMesh->Update(pTimer);
 
 		m_pCamera->Update(pTimer);
-		m_pMesh->SetMatrix(m_pCamera->GetViewMatrix() * m_pCamera->GetProjectionMatrix());
+		m_pMesh->SetMatrix(m_pCamera->GetViewMatrix() * m_pCamera->GetProjectionMatrix(), m_pCamera->GetInvViewMatrix());
 	
 	}
 

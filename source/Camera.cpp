@@ -20,14 +20,17 @@ namespace dae
 		forward = Vector3::UnitZ;
 	}
 
-	void dae::Camera::CalculateViewMatrix()
+	void Camera::CalculateViewMatrix()
 	{
 		right = Vector3::Cross(Vector3::UnitY, forward).Normalized();
 		up = Vector3::Cross(forward, right);
 
-		Matrix invViewMatrix { right,up,forward,origin };
+		invViewMatrix = Matrix{ right,up,forward,origin };
+
 
 		viewMatrix = invViewMatrix.Inverse();
+
+		invViewMatrix = Matrix{ right,up,forward,origin };
 
 		//ViewMatrix => Matrix::CreateLookAtLH(...) [not implemented yet]
 		//DirectX Implementation => https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3dxmatrixlookatlh
@@ -57,12 +60,17 @@ namespace dae
 		return projectionMatrix;
 	}
 
-	Matrix dae::Camera::GetViewMatrix() const
+	Matrix Camera::GetViewMatrix() const
 	{
 		return viewMatrix;
 	}
 
-	void dae::Camera::Update(const Timer* pTimer)
+	Matrix* Camera::GetInvViewMatrix()
+	{
+		return &invViewMatrix;
+	}
+
+	void Camera::Update(const Timer* pTimer)
 	{
 		//Camera Update Logic
 		//...

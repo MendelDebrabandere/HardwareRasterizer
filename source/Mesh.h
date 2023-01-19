@@ -28,7 +28,7 @@ namespace dae
 
 		void Update(const Timer* pTimer);
 		void Render(ID3D11DeviceContext* pDeviceContext) const;
-		void SetMatrix(const Matrix& matrix);
+		void SetMatrix(const Matrix& matrix, Matrix* invViewMatrix);
 		void ToggleRotation();
 		void ToggleFilteringMethod(ID3D11Device* device);
 

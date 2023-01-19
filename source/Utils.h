@@ -1,6 +1,8 @@
 #pragma once
 #include <fstream>
 #include "Math.h"
+#include <vector>
+#include "Mesh.h"
 
 namespace dae
 {
@@ -101,7 +103,7 @@ namespace dae
 					}
 
 					indices.push_back(tempIndices[0]);
-					if (flipAxisAndWinding) 
+					if (flipAxisAndWinding)
 					{
 						indices.push_back(tempIndices[2]);
 						indices.push_back(tempIndices[1]);
@@ -145,9 +147,9 @@ namespace dae
 			//Create the Tangents (reject)
 			for (auto& v : vertices)
 			{
-				//v.tangent = Vector3::Reject(v.tangent, v.normal).Normalized();
+				v.tangent = Vector3::Reject(v.tangent, v.normal).Normalized();
 
-				if(flipAxisAndWinding)
+				if (flipAxisAndWinding)
 				{
 					v.position.z *= -1.f;
 					v.normal.z *= -1.f;
