@@ -2,13 +2,12 @@
 #include "Renderer.h"
 #include "Mesh.h"
 #include "Camera.h"
+#include "EffectShaded.h"
+#include "EffectTransparent.h"
 #include "Utils.h"
+#include "Texture.h"
 
 namespace dae {
-
-//#define UVSquare
-#define Vehicle
-
 
 	Renderer::Renderer(SDL_Window* pWindow) :
 		m_pWindow(pWindow)
@@ -28,39 +27,20 @@ namespace dae {
 			std::cout << "DirectX initialization failed!\n";
 		}
 
-#if defined(UVSquare)
-		const std::vector<Vertex> vertices{
-			{Vector3{-3,3,-2},		Vector2{0,0}},
-			{Vector3{0,3,-2},			Vector2{0.5f, 0}},
-			{Vector3{3,3,-2},			Vector2{1,0}},
-			{Vector3{-3,0,-2},		Vector2{0,0.5f}},
-			{Vector3{0,0,-2},			Vector2{0.5f,0.5f}},
-			{Vector3{3,0,-2},			Vector2{1,0.5f}},
-			{Vector3{-3,-3,-2},		Vector2{0,1}},
-			{Vector3{0,-3,-2},		Vector2{0.5f,1}},
-			{Vector3{3,-3,-2},		Vector2{1, 1}}
-		};
-
-		const std::vector<uint32_t> indices{ 3,0,1, 1,4,3, 4,1,2, 2,5,4, 6,3,4, 4,7,6, 7,4,5, 5,8,7 };
-		m_pMesh = new Mesh(m_pDevice, vertices, indices, "resources/uv_grid_2.png");
-
-		m_pCamera = new Camera();
-		m_pCamera->Initialize(float(m_Width) / m_Height, 45.f, { 0,0,-10.f });
-
-#elif defined(Vehicle)
-		
-		m_pMesh = new Mesh(m_pDevice, "Resources/vehicle.obj", "resources/vehicle_diffuse.png");
+		InitMeshes();
 
 		m_pCamera = new Camera();
 		m_pCamera->Initialize(float(m_Width) / m_Height, 45.f, { 0,0,-50.f });
 
-#endif
 	}
 
 	Renderer::~Renderer()
 	{
 		delete m_pCamera;
-		delete m_pMesh;
+		for (Mesh* pMesh : m_MeshPtrs)
+		{
+			delete pMesh;
+		}
 
 		if (m_pRenderTargetView) m_pRenderTargetView->Release();
 		if (m_pRenderTargetBuffer) m_pRenderTargetBuffer->Release();
@@ -81,11 +61,13 @@ namespace dae {
 
 	void Renderer::Update(const Timer* pTimer)
 	{
-		m_pMesh->Update(pTimer);
-
 		m_pCamera->Update(pTimer);
-		m_pMesh->SetMatrix(m_pCamera->GetViewMatrix() * m_pCamera->GetProjectionMatrix(), m_pCamera->GetInvViewMatrix());
-	
+		for (Mesh* pMesh : m_MeshPtrs)
+		{
+			pMesh->SetMatrix(m_pCamera->GetViewMatrix() * m_pCamera->GetProjectionMatrix(), m_pCamera->GetInvViewMatrix());
+
+			pMesh->Update(pTimer);
+		}
 	}
 
 
@@ -102,7 +84,10 @@ namespace dae {
 
 
 		//2. SET PIPELINE + INVOKE DRAWCALLS (= RENDER)
-		m_pMesh->Render(m_pDeviceContext);
+		for (Mesh* pMesh : m_MeshPtrs)
+		{
+			pMesh->Render(m_pDeviceContext);
+		}
 
 
 
@@ -114,12 +99,80 @@ namespace dae {
 
 	void Renderer::ToggleRotation()
 	{
-		m_pMesh->ToggleRotation();
+		for (Mesh* pMesh : m_MeshPtrs)
+		{
+			pMesh->ToggleRotation();
+		}
 	}
 
 	void Renderer::ToggleFilteringMethod()
 	{
-		m_pMesh->ToggleFilteringMethod(m_pDevice);
+		D3D11_FILTER newFilter{};
+		switch (m_FilteringMethod)
+		{
+		case FilteringMethod::Point:
+			m_FilteringMethod = FilteringMethod::Linear;
+			newFilter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+			std::cout << "FILTERING METHOD: LINEAR\n";
+			break;
+		case FilteringMethod::Linear:
+			m_FilteringMethod = FilteringMethod::Anisotropic;
+			newFilter = D3D11_FILTER_ANISOTROPIC;
+			std::cout << "FILTERING METHOD: ANISOTROPIC\n";
+			break;
+		case FilteringMethod::Anisotropic:
+			m_FilteringMethod = FilteringMethod::Point;
+			newFilter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+			std::cout << "FILTERING METHOD: POINT\n";
+			break;
+		}
+
+		LoadSampleState(newFilter, m_pDevice);
+	}
+
+	void Renderer::InitMeshes()
+	{
+		//Vehicle
+		EffectShaded* vehicleEffect{ new EffectShaded{ m_pDevice, L"Resources/PosCol3D.fx" } };
+
+		//Load textures
+		Texture* pDiffuse{ Texture::LoadFromFile("Resources/vehicle_diffuse.png", m_pDevice) };
+		vehicleEffect->SetDiffuseMap(pDiffuse);
+
+		Texture* pNormal{ Texture::LoadFromFile("Resources/vehicle_normal.png", m_pDevice) };
+		vehicleEffect->SetNormalMap(pNormal);
+
+		Texture* pSpecular{ Texture::LoadFromFile("Resources/vehicle_specular.png", m_pDevice) };
+		vehicleEffect->SetSpecularMap(pSpecular);
+
+		Texture* pGlossiness{ Texture::LoadFromFile("Resources/vehicle_gloss.png", m_pDevice) };
+		vehicleEffect->SetGlossinessMap(pGlossiness);
+
+		//The Set...Map function autiomatically deletes the texture so no need to delete them here
+
+		//Create vehicle
+		Mesh* pVehicle{ new Mesh{ m_pDevice, "Resources/vehicle.obj", vehicleEffect} };
+		m_MeshPtrs.push_back(pVehicle);
+
+
+
+		//Fire
+		EffectTransparent* fireEffect{ new EffectTransparent{ m_pDevice, L"Resources/PartialCoverage.fx" } };
+
+		//Load textures
+		Texture* pFireDiffuse{ Texture::LoadFromFile("Resources/fireFX_diffuse.png", m_pDevice) };
+		fireEffect->SetDiffuseMap(pFireDiffuse);
+
+		//The Set...Map function autiomatically deletes the texture so no need to delete them here
+
+		//Create fire
+		Mesh* pFire{ new Mesh{ m_pDevice, "Resources/fireFX.obj", fireEffect} };
+		m_MeshPtrs.push_back(pFire);
+
+
+
+
+
 	}
 
 	HRESULT Renderer::InitializeDirectX()
@@ -236,6 +289,35 @@ namespace dae {
 		m_pDeviceContext->RSSetViewports(1, &viewport);
 
 		return result;
+
+	}
+
+	void Renderer::LoadSampleState(const D3D11_FILTER& filter, ID3D11Device* device)
+	{
+		// Create the SampleState description
+		D3D11_SAMPLER_DESC sampleDesc{};
+		sampleDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampleDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampleDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampleDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		sampleDesc.MipLODBias = 0;
+		sampleDesc.MinLOD = 0;
+		sampleDesc.MaxLOD = D3D11_FLOAT32_MAX;
+		sampleDesc.MaxAnisotropy = 16;
+		sampleDesc.Filter = filter;
+
+
+		if (m_pSamplerState) m_pSamplerState->Release();
+
+
+		HRESULT result{ device->CreateSamplerState(&sampleDesc, &m_pSamplerState) };
+		if (FAILED(result))
+			std::cout << "m_pSamplerState failed to load\n";
+
+		for (Mesh* pMesh : m_MeshPtrs)
+		{
+			pMesh->SetSamplerState(m_pSamplerState);
+		}
 
 	}
 

@@ -26,6 +26,8 @@ namespace dae
 		void ToggleFilteringMethod();
 
 	private:
+		void InitMeshes();
+
 		SDL_Window* m_pWindow{};
 
 		int m_Width{};
@@ -33,10 +35,10 @@ namespace dae
 
 		bool m_IsInitialized{ false };
 
-		Mesh* m_pMesh{ nullptr };
+		std::vector<Mesh*> m_MeshPtrs{};
 		Camera* m_pCamera{ nullptr };
 
-		ID3D11SamplerState* m_pSampleState{ nullptr };
+		ID3D11SamplerState* m_pSamplerState{ nullptr };
 		ID3D11Device* m_pDevice{ nullptr };
 		ID3D11DeviceContext* m_pDeviceContext{ nullptr };
 		IDXGISwapChain* m_pSwapChain{ nullptr };
@@ -49,6 +51,17 @@ namespace dae
 		//DIRECTX
 		HRESULT InitializeDirectX();
 		//...
+
+		enum class FilteringMethod
+		{
+			Point = 0,
+			Linear = 1,
+			Anisotropic = 2
+		};
+
+		FilteringMethod m_FilteringMethod{ 0 };
+
+		void LoadSampleState(const D3D11_FILTER& filter, ID3D11Device* device);
 
 	};
 }

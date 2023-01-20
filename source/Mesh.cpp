@@ -1,36 +1,25 @@
 #include "pch.h"
 #include "Mesh.h"
 #include "Effect.h"
-#include "Texture.h"
 #include <cassert>
 #include "utils.h"
 
 using namespace dae;
 
-Mesh::Mesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::string& texturePath)
-	:m_pEffect{ new Effect(pDevice, L"Resources/PosCol3D.fx") }
-{
-	InitMesh(pDevice, vertices, indices, texturePath);
-}
-
-dae::Mesh::Mesh(ID3D11Device* pDevice, const std::string& objectPath, const std::string& texturePath)
-	:m_pEffect{ new Effect(pDevice, L"Resources/PosCol3D.fx") }
+Mesh::Mesh(ID3D11Device* pDevice, const std::string& objectPath, Effect* pEffect)
+	:m_pEffect{ pEffect }
 {
 	std::vector<Vertex> vertices{};
 	std::vector<uint32_t> indices{};
-	Utils::ParseOBJ("Resources/vehicle.obj", vertices, indices);
+	Utils::ParseOBJ(objectPath, vertices, indices);
 
-	InitMesh(pDevice, vertices, indices, texturePath);
+	m_pInputLayout = m_pEffect->LoadInputLayout(pDevice);
 
-	m_pEffect->SetDiffuseMap(Texture::LoadFromFile(texturePath, pDevice));
-	m_pEffect->SetNormalMap(Texture::LoadFromFile("resources/vehicle_normal.png", pDevice));
-	m_pEffect->SetSpecularMap(Texture::LoadFromFile("resources/vehicle_specular.png", pDevice));
-	m_pEffect->SetGlossinessMap(Texture::LoadFromFile("resources/vehicle_gloss.png", pDevice));
+	InitMesh(pDevice, vertices, indices);
 }
 
-void Mesh::InitMesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::string& texturePath)
+void Mesh::InitMesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices)
 {
-
 	//Create Vertex buffer
 	D3D11_BUFFER_DESC bd{};
 	bd.Usage = D3D11_USAGE_IMMUTABLE;
@@ -67,8 +56,6 @@ Mesh::~Mesh()
 	if (m_pVertexBuffer) m_pVertexBuffer->Release();
 
 	if (m_pIndexBuffer) m_pIndexBuffer->Release();
-
-	//if (m_pTechnique) m_pTechnique->Release();
 }
 
 void Mesh::Update(const Timer* pTimer)
@@ -87,7 +74,7 @@ void Mesh::Render(ID3D11DeviceContext* pDeviceContext) const
 	pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	//2. Set Input Layout
-	pDeviceContext->IASetInputLayout(m_pEffect->GetInputLayout());
+	pDeviceContext->IASetInputLayout(m_pInputLayout);
 
 	//3. Set VertexBuffer
 	constexpr UINT stride = sizeof(Vertex);
@@ -122,9 +109,9 @@ void Mesh::ToggleRotation()
 	m_IsRotating = !m_IsRotating;
 }
 
-void Mesh::ToggleFilteringMethod(ID3D11Device* device)
+void Mesh::SetSamplerState(ID3D11SamplerState* pSampleState)
 {
-	m_pEffect->ToggleFilteringMethod(device);
+	m_pEffect->SetSampleState(pSampleState);
 }
 
 

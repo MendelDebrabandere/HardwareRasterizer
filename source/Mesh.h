@@ -16,8 +16,7 @@ namespace dae
 	class Mesh final
 	{
 	public:
-		Mesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::string& texturePath);
-		Mesh(ID3D11Device* pDevice, const std::string& objectPath, const std::string& texturePath);
+		Mesh(ID3D11Device* pDevice, const std::string& objectPath, Effect* pEffect);
 		~Mesh();
 
 		// rule of 5 copypasta
@@ -30,20 +29,16 @@ namespace dae
 		void Render(ID3D11DeviceContext* pDeviceContext) const;
 		void SetMatrix(const Matrix& matrix, Matrix* invViewMatrix);
 		void ToggleRotation();
-		void ToggleFilteringMethod(ID3D11Device* device);
+		void SetSamplerState(ID3D11SamplerState* pSampleState);
 
 	private:
-		void InitMesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, const std::string& texturePath);
+		void InitMesh(ID3D11Device* pDevice, const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices);
 
 
-		//Create Vertex Layout part
 		Effect* m_pEffect{ nullptr };
-
-
-		//Create Vertex buffer part
+		ID3D11InputLayout* m_pInputLayout{ nullptr };
 		ID3D11Buffer* m_pVertexBuffer{ nullptr };
 
-		//Create Index Buffer part
 		uint32_t m_NumIndices{};
 		ID3D11Buffer* m_pIndexBuffer{ nullptr };
 
