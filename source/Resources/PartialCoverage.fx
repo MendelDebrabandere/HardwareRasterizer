@@ -39,7 +39,7 @@ DepthStencilState gDepthStencilState
 	//	StencilEnable is FALSE
 	//(for demo purposes only)
 	StencilReadMask = 0x0F;
-	StencilWriteMask = 0x0F;
+	StencilWriteMask = 0x0F; 
 
 	FrontFaceStencilFunc = always;
 	BackFaceStencilFunc = always;
